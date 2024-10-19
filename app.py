@@ -1,8 +1,10 @@
 from flask import Flask, render_template, request, jsonify, session
 import uuid
-
+import dotenv
+import os
+dotenv.load_dotenv()
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'  # Replace with a real secret key in production
+app.secret_key = os.environ['OPENAI_API_KEY'] # Replace with a real secret key in production
 
 # In-memory storage for chats (replace with a database in a real application)
 chats = {}

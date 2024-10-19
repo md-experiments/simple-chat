@@ -13,6 +13,13 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
+# AI models dictionary
+AI_MODELS = {
+    'OpenAI': 'openai-20231130-31',
+    'Claude': 'claude-v1',
+    'GPT-4': 'gpt4-20230630'
+}
+
 def generate_chat_id():
     return str(uuid.uuid4())
 
@@ -32,7 +39,7 @@ def load_chat(chat_id):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    return render_template('index.html', ai_models=AI_MODELS)
 
 @app.route('/new_chat', methods=['POST'])
 def new_chat():
@@ -65,7 +72,7 @@ def chat(chat_id):
         save_chat(chat_id, chat_data)
         return jsonify({'response': ai_response})
     
-    return render_template('chat.html', chat_id=chat_id, chat_data=chat_data)
+    return render_template('chat.html', chat_id=chat_id, chat_data=chat_data, ai_models=AI_MODELS)
 
 @app.route('/chat/<chat_id>/history')
 def chat_history(chat_id):
@@ -98,6 +105,7 @@ def chat_setup(chat_id):
     if request.method == 'POST':
         chat_data['name'] = request.form.get('name', chat_data['name'])
         chat_data['context'] = request.form.get('context', chat_data['context'])
+        chat_data['ai_model'] = request.form.get('ai_model', chat_data['ai_model'])
         save_chat(chat_id, chat_data)
         return jsonify({'success': True})
 

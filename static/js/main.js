@@ -6,14 +6,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const aiModelModal = new bootstrap.Modal(document.getElementById('aiModelModal'));
     const setupModal = new bootstrap.Modal(document.getElementById('setupModal'));
 
-    console.log('DOM content loaded');
-
     newChatBtn.addEventListener('click', function() {
         aiModelModal.show();
     });
 
     createChatBtn.addEventListener('click', function() {
-        const selectedAI = document.querySelector('input[name="aiModel"]:checked').value;
+        const selectedAI = document.getElementById('aiModelSelect').value;
         createNewChat(selectedAI);
         aiModelModal.hide();
     });
@@ -29,13 +27,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             const chatId = data.chat_id;
-            addChatToList(chatId, data.name, 0);
+            addChatToList(chatId, data.name, 0, data.ai_model);
             loadChat(chatId);
         });
     }
 
-    function addChatToList(chatId, name, messageCount) {
-        console.log('Adding chat to list:', chatId, name, messageCount);
+    function addChatToList(chatId, name, messageCount, aiModel) {
         const li = document.createElement('li');
         li.className = 'nav-item d-flex justify-content-between align-items-center';
         li.innerHTML = `
@@ -50,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         li.querySelector('.setup-btn').addEventListener('click', function(e) {
             e.preventDefault();
-            console.log('Setup button clicked for chat:', chatId);
             openSetupModal(chatId);
         });
         chatList.appendChild(li);
@@ -127,13 +123,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function openSetupModal(chatId) {
-        console.log('Opening setup modal for chat:', chatId);
         fetch(`/chat/${chatId}/setup`)
         .then(response => response.json())
         .then(chatData => {
-            console.log('Received chat data:', chatData);
             document.getElementById('setupChatId').value = chatId;
             document.getElementById('setupChatName').value = chatData.name;
+            document.getElementById('setupAiModel').value = chatData.ai_model;
             document.getElementById('setupChatContext').value = chatData.context;
             
             const artifactsList = document.getElementById('artifactsList');
@@ -145,14 +140,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             setupModal.show();
-        })
-        .catch(error => console.error('Error fetching chat setup data:', error));
+        });
     }
 
     document.getElementById('setupForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const chatId = document.getElementById('setupChatId').value;
         const name = document.getElementById('setupChatName').value;
+        const aiModel = document.getElementById('setupAiModel').value;
         const context = document.getElementById('setupChatContext').value;
 
         fetch(`/chat/${chatId}/setup`, {
@@ -160,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
             },
-            body: `name=${encodeURIComponent(name)}&context=${encodeURIComponent(context)}`
+            body: `name=${encodeURIComponent(name)}&ai_model=${encodeURIComponent(aiModel)}&context=${encodeURIComponent(context)}`
         })
         .then(response => response.json())
         .then(data => {
@@ -214,9 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(response => response.json())
     .then(chats => {
         chats.forEach(chat => {
-            addChatToList(chat.id, chat.name, chat.message_count);
+            addChatToList(chat.id, chat.name, chat.message_count, chat.ai_model);
         });
     });
-
-    console.log('Script fully loaded');
 });

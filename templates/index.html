@@ -40,18 +40,11 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="aiModel" id="claude" value="claude">
-                        <label class="form-check-label" for="claude">
-                            Claude
-                        </label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="aiModel" id="openai" value="openai">
-                        <label class="form-check-label" for="openai">
-                            OpenAI
-                        </label>
-                    </div>
+                    <select class="form-select" id="aiModelSelect">
+                        {% for name, id in ai_models.items() %}
+                        <option value="{{ id }}">{{ name }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -75,6 +68,14 @@
                         <div class="mb-3">
                             <label for="setupChatName" class="form-label">Chat Name</label>
                             <input type="text" class="form-control" id="setupChatName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="setupAiModel" class="form-label">AI Model</label>
+                            <select class="form-select" id="setupAiModel">
+                                {% for name, id in ai_models.items() %}
+                                <option value="{{ id }}">{{ name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="setupChatContext" class="form-label">Context</label>

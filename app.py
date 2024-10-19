@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 import os
 import uuid
 import json
-
+from llm import llm_call
 load_dotenv()  # Load environment variables from .env file
 
 app = Flask(__name__)
@@ -13,11 +13,12 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
-# AI models dictionary
+
 AI_MODELS = {
-    'OpenAI': 'openai-20231130-31',
-    'Claude': 'claude-v1',
-    'GPT-4': 'gpt4-20230630'
+    'gpt4o': 'gpt-4o',
+    'gpt4om': 'gpt-4o-mini',
+    'haiku': 'claude-3-haiku-20240307',
+    'claude35': 'claude-3-5-sonnet-20240620'
 }
 
 def generate_chat_id():
@@ -48,7 +49,7 @@ def new_chat():
     chat_data = {
         'ai_model': ai_model,
         'name': f"New Chat ({ai_model})",
-        'context': "",
+        'context': "You are a helpful assistant.",
         'artifacts': [],
         'messages': []
     }
@@ -66,7 +67,7 @@ def chat(chat_id):
         chat_data['messages'].append(('user', user_message))
         
         # Placeholder AI response (replace with actual AI integration)
-        ai_response = f"This is a placeholder response from {chat_data['ai_model']}."
+        ai_response, _, _ = llm_call(chat_data['ai_model'], chat_data['context'], chat_data['messages'])
         chat_data['messages'].append(('ai', ai_response))
         
         save_chat(chat_id, chat_data)

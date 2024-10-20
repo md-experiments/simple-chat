@@ -55,9 +55,14 @@ document.addEventListener('DOMContentLoaded', function() {
         li.className = 'nav-item d-flex justify-content-between align-items-center';
         li.innerHTML = `
             <a class="nav-link" href="#" data-chat-id="${chatId}">${name} - ${messageCount} messages</a>
-            <button class="btn btn-sm btn-outline-secondary setup-btn" data-chat-id="${chatId}">
-                <i class="fas fa-cog"></i>
-            </button>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary setup-btn" data-chat-id="${chatId}">
+                    <i class="fas fa-cog"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger delete-btn" data-chat-id="${chatId}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
         `;
         li.querySelector('a').addEventListener('click', function(e) {
             e.preventDefault();
@@ -67,7 +72,39 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             openSetupModal(chatId);
         });
+        li.querySelector('.delete-btn').addEventListener('click', function(e) {
+            e.preventDefault();
+            deleteChat(chatId);
+        });
         chatList.appendChild(li);
+    }
+
+    function deleteChat(chatId) {
+        if (confirm('Are you sure you want to delete this chat?')) {
+            fetch(`/chat/${chatId}`, {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const chatItem = document.querySelector(`li a[data-chat-id="${chatId}"]`).closest('li');
+                    chatItem.remove();
+                    if (currentChatId === chatId) {
+                        chatContainer.innerHTML = '';
+                        currentChatId = null;
+                        currentChatName.textContent = '';
+                    }
+                    console.log(data.message); // Log success message
+                } else {
+                    console.error('Error deleting chat:', data.error);
+                    alert('Failed to delete chat. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error deleting chat:', error);
+                alert('Failed to delete chat. Please try again.');
+            });
+        }
     }
 
     function loadChat(chatId) {
@@ -140,8 +177,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
     function sendMessage(chatId, message) {
+        // Add user message to chat immediately
+        addMessageToChat(message, true);
+
+        // Show loading indicator
+        showLoadingIndicator();
+
         fetch(`/chat/${chatId}`, {
             method: 'POST',
             headers: {
@@ -151,13 +194,36 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            addMessageToChat(message, true);
+            // Hide loading indicator
+            hideLoadingIndicator();
+
+            // Add AI response to chat
             addMessageToChat(data.response, false);
             updateChatListMessageCount(chatId);
         })
-        .catch(error => console.error('Error sending message:', error));
+        .catch(error => {
+            console.error('Error sending message:', error);
+            hideLoadingIndicator();
+            addMessageToChat("An error occurred while processing your message. Please try again.", false);
+        });
     }
-    
+
+    function showLoadingIndicator() {
+        const loadingIndicator = document.createElement('div');
+        loadingIndicator.id = 'loadingIndicator';
+        loadingIndicator.className = 'spinner-border text-primary';
+        loadingIndicator.setAttribute('role', 'status');
+        loadingIndicator.innerHTML = '<span class="visually-hidden">Loading...</span>';
+        document.getElementById('chatMessages').appendChild(loadingIndicator);
+    }
+
+    function hideLoadingIndicator() {
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+    }
+
     function addMessageToChat(message, isUser, container = document.getElementById('chatMessages')) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
@@ -165,7 +231,6 @@ document.addEventListener('DOMContentLoaded', function() {
         container.appendChild(messageDiv);
         container.scrollTop = container.scrollHeight;
     }
-
 
     function formatMessage(message) {
         // Replace newlines with <br> tags

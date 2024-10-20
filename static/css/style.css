@@ -9,6 +9,7 @@
     --ai-message-color: #333333;
     --border-color: #dee2e6;
     --selected-chat-bg: #e9ecef;
+    --code-bg: #f8f9fa;
 }
 
 .dark-mode {
@@ -22,6 +23,7 @@
     --ai-message-color: #ffffff;
     --border-color: #444444;
     --selected-chat-bg: #3a3a3a;
+    --code-bg: #2c2c2c;
 }
 
 html, body {
@@ -83,6 +85,8 @@ main {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .user-message {
@@ -96,6 +100,21 @@ main {
     background-color: var(--ai-message-bg);
     color: var(--ai-message-color);
     align-self: flex-start;
+}
+
+.message strong {
+    font-weight: bold;
+}
+
+.message em {
+    font-style: italic;
+}
+
+.message code {
+    background-color: var(--code-bg);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-family: monospace;
 }
 
 #messageForm {
@@ -147,4 +166,16 @@ main {
 
 #chatList .selected-chat a {
     font-weight: bold;
+}
+
+#loadingIndicator {
+    position: absolute;
+    bottom: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
 }

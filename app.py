@@ -56,11 +56,18 @@ def new_chat():
     save_chat(chat_id, chat_data)
     return jsonify({'chat_id': chat_id, 'ai_model': ai_model, 'name': chat_data['name']})
 
-@app.route('/chat/<chat_id>', methods=['GET', 'POST'])
+@app.route('/chat/<chat_id>', methods=['GET', 'POST', 'DELETE'])
 def chat(chat_id):
     chat_data = load_chat(chat_id)
     if chat_data is None:
         return jsonify({"error": "Chat not found"}), 404
+
+    if request.method == 'DELETE':
+        try:
+            os.remove(get_chat_file_path(chat_id))
+            return jsonify({"success": True, "message": "Chat deleted successfully"})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500
 
     if request.method == 'POST':
         user_message = request.form.get('message')

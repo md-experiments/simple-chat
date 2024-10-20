@@ -53,7 +53,8 @@ def call_claude(model_name: str, system_prompt: str, message_list: list[str,str]
         model=model_name,
         temperature=0.0,
         system=system_prompt,
-        messages=chat_history
+        messages=chat_history,
+        max_tokens=4086,
     )
     nr_tokens = {
         "input_tokens": message.usage.input_tokens,

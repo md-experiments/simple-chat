@@ -157,14 +157,32 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .catch(error => console.error('Error sending message:', error));
     }
-
+    
     function addMessageToChat(message, isUser, container = document.getElementById('chatMessages')) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-        messageDiv.textContent = message;
+        messageDiv.innerHTML = formatMessage(message);
         container.appendChild(messageDiv);
         container.scrollTop = container.scrollHeight;
     }
+
+
+    function formatMessage(message) {
+        // Replace newlines with <br> tags
+        let formattedMessage = message.replace(/\n/g, '<br>');
+        
+        // Replace **bold** with <strong>bold</strong>
+        formattedMessage = formattedMessage.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        // Replace *italic* with <em>italic</em>
+        formattedMessage = formattedMessage.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        
+        // Replace `code` with <code>code</code>
+        formattedMessage = formattedMessage.replace(/`(.*?)`/g, '<code>$1</code>');
+
+        return formattedMessage;
+    }
+
 
     function updateChatListMessageCount(chatId) {
         fetch(`/chat/${chatId}/history`)

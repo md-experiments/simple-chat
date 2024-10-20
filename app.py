@@ -74,7 +74,8 @@ def chat(chat_id):
         chat_data['messages'].append(('user', user_message))
         
         # Get AI response
-        ai_response, _, _ = llm_call(chat_data['ai_model'], chat_data['context'], chat_data['messages'])
+        context = chat_data.get('context', '') + '\n' + '\n\n'.join([f"### {m['name']}\n{m['content']}" for m in chat_data['artifacts']])
+        ai_response, _, _ = llm_call(chat_data['ai_model'], context, chat_data['messages'])
         chat_data['messages'].append(('ai', ai_response))
         
         save_chat(chat_id, chat_data)

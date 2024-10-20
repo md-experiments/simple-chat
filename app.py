@@ -13,7 +13,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
 DATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
 os.makedirs(DATA_DIR, exist_ok=True)
 
-
+# AI models dictionary
 AI_MODELS = {
     'gpt4o': 'gpt-4o',
     'gpt4om': 'gpt-4o-mini',
@@ -60,26 +60,26 @@ def new_chat():
 def chat(chat_id):
     chat_data = load_chat(chat_id)
     if chat_data is None:
-        return "Chat not found", 404
+        return jsonify({"error": "Chat not found"}), 404
 
     if request.method == 'POST':
         user_message = request.form.get('message')
         chat_data['messages'].append(('user', user_message))
         
-        # Placeholder AI response (replace with actual AI integration)
+        # Get AI response
         ai_response, _, _ = llm_call(chat_data['ai_model'], chat_data['context'], chat_data['messages'])
         chat_data['messages'].append(('ai', ai_response))
         
         save_chat(chat_id, chat_data)
         return jsonify({'response': ai_response})
     
-    return render_template('chat.html', chat_id=chat_id, chat_data=chat_data, ai_models=AI_MODELS)
+    return jsonify(chat_data)
 
 @app.route('/chat/<chat_id>/history')
 def chat_history(chat_id):
     chat_data = load_chat(chat_id)
     if chat_data is None:
-        return "Chat not found", 404
+        return jsonify({"error": "Chat not found"}), 404
     return jsonify(chat_data['messages'])
 
 @app.route('/chats')
@@ -101,7 +101,7 @@ def list_chats():
 def chat_setup(chat_id):
     chat_data = load_chat(chat_id)
     if chat_data is None:
-        return "Chat not found", 404
+        return jsonify({"error": "Chat not found"}), 404
 
     if request.method == 'POST':
         chat_data['name'] = request.form.get('name', chat_data['name'])
@@ -116,7 +116,7 @@ def chat_setup(chat_id):
 def add_artifact(chat_id):
     chat_data = load_chat(chat_id)
     if chat_data is None:
-        return "Chat not found", 404
+        return jsonify({"error": "Chat not found"}), 404
 
     artifact = {
         'name': request.form.get('name'),

@@ -22,7 +22,7 @@ def llm_call(model_name: str, system_prompt: str, message_list: list[str,str]):
 
 def call_gpt(model_name: str, system_prompt: str, message_list: list[str,str]):
     chat_history = [{'role': 'assistant', 'content': str(msg)} if tp == 'ai' 
-            else {'role': 'user', 'content': msg} for msg,tp in message_list]
+            else {'role': 'user', 'content': msg} for tp,msg in message_list]
     system_message = [{'role': 'system', 'content': system_prompt}]
     messages = system_message + \
             chat_history
@@ -48,7 +48,7 @@ def call_claude(model_name: str, system_prompt: str, message_list: list[str,str]
         api_key=os.environ.get("ANTHROPIC_API_KEY"),
     )
     chat_history = [{'role': 'assistant', 'content': str(msg)} if tp == 'ai' 
-            else {'role': 'user', 'content': msg} for msg,tp in message_list]
+            else {'role': 'user', 'content': msg} for tp,msg in message_list]
     message = client.messages.create(
         model=model_name,
         temperature=0.0,

@@ -3,8 +3,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const createChatBtn = document.getElementById('createChatBtn');
     const chatList = document.getElementById('chatList');
     const chatContainer = document.getElementById('chatContainer');
+    const currentChatName = document.getElementById('currentChatName');
     const aiModelModal = new bootstrap.Modal(document.getElementById('aiModelModal'));
     const setupModal = new bootstrap.Modal(document.getElementById('setupModal'));
+    const darkModeSwitch = document.getElementById('darkModeSwitch');
+
+    let currentChatId = null;
+
+    // Dark mode toggle
+    darkModeSwitch.addEventListener('change', function() {
+        document.documentElement.classList.toggle('dark-mode', this.checked);
+        localStorage.setItem('darkMode', this.checked);
+    });
+
+    // Set initial dark mode state
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode !== null) {
+        darkModeSwitch.checked = JSON.parse(savedDarkMode);
+        document.documentElement.classList.toggle('dark-mode', darkModeSwitch.checked);
+    }
 
     newChatBtn.addEventListener('click', function() {
         aiModelModal.show();
@@ -29,7 +46,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const chatId = data.chat_id;
             addChatToList(chatId, data.name, 0, data.ai_model);
             loadChat(chatId);
-        });
+        })
+        .catch(error => console.error('Error creating new chat:', error));
     }
 
     function addChatToList(chatId, name, messageCount, aiModel) {
@@ -54,17 +72,64 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function loadChat(chatId) {
         fetch(`/chat/${chatId}`)
-        .then(response => response.text())
-        .then(html => {
-            chatContainer.innerHTML = html;
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            currentChatId = chatId;
+            currentChatName.textContent = data.name;
+            chatContainer.innerHTML = '<div id="chatMessages"></div>';
             initializeChatFunctionality(chatId);
+            highlightSelectedChat(chatId);
+            displayChatMessages(data.messages || []);
+        })
+        .catch(error => {
+            console.error('Error loading chat:', error);
+            chatContainer.innerHTML = '<p>Error loading chat. Please try again.</p>';
+        });
+    }
+
+    function displayChatMessages(messages) {
+        const chatMessages = document.getElementById('chatMessages');
+        chatMessages.innerHTML = '';
+        messages.forEach(message => {
+            if (Array.isArray(message) && message.length === 2) {
+                addMessageToChat(message[1], message[0] === 'user', chatMessages);
+            } else {
+                console.error('Invalid message format:', message);
+            }
+        });
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function highlightSelectedChat(chatId) {
+        const chatItems = chatList.querySelectorAll('li');
+        chatItems.forEach(item => {
+            const link = item.querySelector('a');
+            if (link.dataset.chatId === chatId) {
+                item.classList.add('selected-chat');
+            } else {
+                item.classList.remove('selected-chat');
+            }
         });
     }
 
     function initializeChatFunctionality(chatId) {
-        const messageForm = document.getElementById('messageForm');
+        const messageForm = document.createElement('form');
+        messageForm.id = 'messageForm';
+        messageForm.className = 'mt-3';
+        messageForm.innerHTML = `
+            <div class="input-group">
+                <input type="text" id="userMessage" class="form-control" placeholder="Type your message...">
+                <button class="btn btn-primary" type="submit">Send</button>
+            </div>
+        `;
+        chatContainer.appendChild(messageForm);
+
         const userMessageInput = document.getElementById('userMessage');
-        const chatMessages = document.getElementById('chatMessages');
 
         messageForm.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -74,39 +139,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 userMessageInput.value = '';
             }
         });
+    }
 
-        function sendMessage(chatId, message) {
-            fetch(`/chat/${chatId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `message=${encodeURIComponent(message)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                addMessageToChat(message, true);
-                addMessageToChat(data.response, false);
-                updateChatListMessageCount(chatId);
-            });
-        }
-
-        function addMessageToChat(message, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
-            messageDiv.textContent = message;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-
-        // Load chat history
-        fetch(`/chat/${chatId}/history`)
+    function sendMessage(chatId, message) {
+        fetch(`/chat/${chatId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `message=${encodeURIComponent(message)}`
+        })
         .then(response => response.json())
-        .then(messages => {
-            messages.forEach(([sender, message]) => {
-                addMessageToChat(message, sender === 'user');
-            });
-        });
+        .then(data => {
+            addMessageToChat(message, true);
+            addMessageToChat(data.response, false);
+            updateChatListMessageCount(chatId);
+        })
+        .catch(error => console.error('Error sending message:', error));
+    }
+
+    function addMessageToChat(message, isUser, container = document.getElementById('chatMessages')) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'ai-message'}`;
+        messageDiv.textContent = message;
+        container.appendChild(messageDiv);
+        container.scrollTop = container.scrollHeight;
     }
 
     function updateChatListMessageCount(chatId) {
@@ -119,7 +176,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const newText = text.replace(/\d+ messages/, `${messages.length} messages`);
                 chatLink.textContent = newText;
             }
-        });
+        })
+        .catch(error => console.error('Error updating message count:', error));
     }
 
     function openSetupModal(chatId) {
@@ -140,7 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             setupModal.show();
-        });
+        })
+        .catch(error => console.error('Error opening setup modal:', error));
     }
 
     document.getElementById('setupForm').addEventListener('submit', function(e) {
@@ -161,9 +220,13 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 updateChatListName(chatId, name);
+                if (currentChatId === chatId) {
+                    currentChatName.textContent = name;
+                }
                 setupModal.hide();
             }
-        });
+        })
+        .catch(error => console.error('Error updating chat setup:', error));
     });
 
     document.getElementById('addArtifactForm').addEventListener('submit', function(e) {
@@ -192,7 +255,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('artifactDescription').value = '';
                 document.getElementById('artifactContent').value = '';
             }
-        });
+        })
+        .catch(error => console.error('Error adding artifact:', error));
     });
 
     function updateChatListName(chatId, newName) {
@@ -211,5 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
         chats.forEach(chat => {
             addChatToList(chat.id, chat.name, chat.message_count, chat.ai_model);
         });
-    });
+        if (chats.length > 0) {
+            loadChat(chats[0].id);
+        }
+    })
+    .catch(error => console.error('Error loading chats:', error));
 });
